@@ -2,6 +2,7 @@ package com.extractpdf4j.parsers;
 
 import com.extractpdf4j.helpers.PageRange;
 import com.extractpdf4j.helpers.Table;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 public class StreamParser extends BaseParser {
     /** Logger for stream parser events. */
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamParser.class);
-    
+
     public StreamParser(String filepath){ super(filepath); }
 
     /**
@@ -51,7 +52,7 @@ public class StreamParser extends BaseParser {
     @Override
     @Deprecated
     protected List<Table> parsePage(int page) throws IOException {
-        try (PDDocument doc = PDDocument.load(new java.io.File(filepath))) {
+        try (PDDocument doc = Loader.loadPDF(new java.io.File(filepath))) {
             List<Table> out = new ArrayList<>();
             List<Integer> pages = PageRange.parse(this.pages);
             if (pages.size() == 1 && pages.get(0) == -1) {
@@ -63,7 +64,7 @@ public class StreamParser extends BaseParser {
             return out;
         }
     }
-    
+
     @Override
     public List<Table> parse(PDDocument document) throws IOException {
         List<Table> tables = new ArrayList<>();
@@ -107,10 +108,28 @@ public class StreamParser extends BaseParser {
         class Collector extends PDFTextStripper {
             final List<Glyph> glyphs = new ArrayList<>();
             Collector() throws IOException { setSortByPosition(true); setStartPage(pageOneIndexed); setEndPage(pageOneIndexed); }
-            @Override protected void processTextPosition(TextPosition text) {
-                String s = text.getUnicode();
-                if (s == null || s.isEmpty()) return;
-                glyphs.add(new Glyph(s, text.getXDirAdj(), text.getYDirAdj(), text.getWidthDirAdj()));
+//            @Override protected void processTextPosition(TextPosition text) {
+//                String s = text.getUnicode();
+//                if (s == null || s.isEmpty()) return;
+//                glyphs.add(new Glyph(s, text.getXDirAdj(), text.getYDirAdj(), text.getWidthDirAdj()));
+//            }
+
+            @Override
+            protected void writeString(String text,List<TextPosition> textPositions) {
+                for (TextPosition position : textPositions) {
+                    String s = position.getUnicode();
+
+                    if (s == null || s.isEmpty()) {
+                        continue;
+                    }
+
+                    glyphs.add(new Glyph(
+                        s,
+                        position.getXDirAdj(),
+                        position.getYDirAdj(),
+                        position.getWidthDirAdj()
+                    ));
+                }
             }
         }
         Collector stripper = new Collector();
@@ -118,7 +137,7 @@ public class StreamParser extends BaseParser {
 
         // Group into lines by Y
         double yTol = 2.0;
-        Map<Integer, List<Glyph>> lines = new TreeMap<>(Comparator.reverseOrder());
+        Map<Integer, List<Glyph>> lines = new TreeMap<>(Comparator.naturalOrder());
         for (Glyph g : stripper.glyphs) {
             int bucket = (int)Math.round(g.y / yTol);
             lines.computeIfAbsent(bucket, k->new ArrayList<>()).add(g);

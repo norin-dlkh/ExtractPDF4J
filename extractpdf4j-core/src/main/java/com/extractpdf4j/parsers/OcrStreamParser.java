@@ -3,6 +3,7 @@ package com.extractpdf4j.parsers;
 import com.extractpdf4j.helpers.Ocr;
 import com.extractpdf4j.helpers.Table;
 import com.extractpdf4j.helpers.ImagePdfUtils;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.bytedeco.opencv.opencv_core.Mat;
 import org.bytedeco.opencv.opencv_core.Size;
@@ -57,7 +58,7 @@ public class OcrStreamParser extends BaseParser {
     @Override
     @Deprecated
     protected List<Table> parsePage(int page) throws IOException {
-        try (PDDocument doc = PDDocument.load(new File(filepath))) {
+        try (PDDocument doc = Loader.loadPDF(new File(filepath))) {
             List<Integer> pages = com.extractpdf4j.helpers.PageRange.parse(this.pages);
             List<Table> out = new ArrayList<>();
             if (pages.size()==1 && pages.get(0)==-1) {

@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
 import org.slf4j.Logger;
@@ -201,7 +203,7 @@ public abstract class BaseParser {
         List<Integer> pageList = PageRange.parse(this.pages);
         if (pageList.size() == 1 && pageList.get(0) == -1) {
             if (filepath == null) return 0;
-            try (PDDocument document = PDDocument.load(new File(filepath))) {
+            try (PDDocument document = Loader.loadPDF(new File(filepath))) {
                 return document.getNumberOfPages();
             } catch (IOException | RuntimeException e) {
                 return 0;

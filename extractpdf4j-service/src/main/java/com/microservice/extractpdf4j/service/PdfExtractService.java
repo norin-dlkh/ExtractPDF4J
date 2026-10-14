@@ -6,6 +6,7 @@ import com.extractpdf4j.annotations.ExtractPdfConfig;
 import com.extractpdf4j.annotations.ParserMode;
 import com.extractpdf4j.helpers.Table;
 import com.extractpdf4j.parsers.BaseParser;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,7 @@ public class PdfExtractService {
         }
 
         // Use a try-with-resources statement to ensure the PDDocument is closed automatically
-        try (PDDocument document = PDDocument.load(file.getInputStream())) {
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
 
             BaseParser parser = ExtractPdfAnnotations.parserFrom(DefaultParserConfig.class);
 
